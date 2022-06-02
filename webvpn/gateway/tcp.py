@@ -9,12 +9,14 @@ class TCPConnection(Connection):
     def __init__(
         self,
         reader: asyncio.StreamReader,
-        writer: asyncio.StreamWriter
+        writer: asyncio.StreamWriter,
+        username: str,
     ):
         super().__init__(closed=False)
 
         self.reader = reader
         self.writer = writer
+        self.username = username
 
     async def push(self, data: bytes):
         self.update()
@@ -41,7 +43,10 @@ class TCPConnection(Connection):
 
 
 class TCPGateway(Gateway):
-    async def open_connection(self, host: str, port: int) -> Optional[str]:
+    def __init__(self):
+        super().__init__(expire_time=20)
+
+    async def open_connection(self, host: str, port: int, username: str) -> Optional[str]:
         try:
             future = asyncio.open_connection(host, port)
             reader, writer = await asyncio.wait_for(future, timeout=5)
@@ -50,10 +55,10 @@ class TCPGateway(Gateway):
         except asyncio.TimeoutError:
             return None
 
-        conn = TCPConnection(reader, writer)
+        conn = TCPConnection(reader, writer, username)
         return super().open_connection(conn)
 
-
-if __name__ == "__main__":
-    gateway = TCPGateway()
-    asyncio.run(gateway.open_connection("localhost", 23311))
+    def get_username(self, token: str) -> Optional[str]:
+        if token not in self.connections:
+            return None
+        return self.connections[token].username

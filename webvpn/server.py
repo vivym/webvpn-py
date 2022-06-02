@@ -6,7 +6,9 @@ from fastapi import FastAPI, Response, Depends, Request
 import sentry_sdk
 
 from .gateway import TCPGateway, InvalidToken
+from .logger import setup_logger
 
+setup_logger(is_server=True)
 logger = logging.getLogger(__name__)
 
 sentry_sdk.init(
@@ -22,15 +24,13 @@ asyncio.create_task(gateway.clean())
 
 @app.get("/token")
 async def get_token(username: str, host: str, port: int):
-    token = await gateway.open_connection(host, port)
+    token = await gateway.open_connection(host, port, username)
     logger.info(f"new connection: {username}:{token} -> {host}:{port}")
 
     if token:
         return {
             "code": 0,
-            "data": {
-                "token": token,
-            },
+            "data": {"token": token},
         }
     else:
         return {
@@ -43,6 +43,7 @@ async def get_token(username: str, host: str, port: int):
 async def keep_alive(token: str):
     try:
         if await gateway.keep_alive(token):
+            logger.info(f"keep-alive: {gateway.get_username(token)}:{token}")
             return {"code": 0}
         else:
             return {"code": 2000, "message": "Connection closed (keep_alive)"}
@@ -71,6 +72,8 @@ async def pull(token: str, n: int = 1024):
     if data is None:
         return Response(status_code=503)    # Connection closed
 
+    if len(data) > 0:
+        logger.info(f"pull {len(data)} bytes: {gateway.get_username(token)}:{token}")
     return Response(data, media_type="application/octet-stream")
 
 
@@ -82,6 +85,7 @@ async def parse_body(request: Request):
 async def push(token: str, data: bytes = Depends(parse_body)):
     try:
         if await gateway.push(token, data):
+            logger.info(f"push {len(data)} bytes: {gateway.get_username(token)}:{token}")
             return {"code": 0}
         else:
             return {"code": 2000, "message": "Connection closed (push)"}

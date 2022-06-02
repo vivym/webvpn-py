@@ -10,6 +10,7 @@ from .client import Client
 from .config import settings, save_settings
 from .gateway import WebVPNGateway
 from .login import buaa_webvpn_login
+from .logger import setup_logger
 
 app = typer.Typer()
 
@@ -63,21 +64,7 @@ def main(verbose: bool = False):
         "https://6e41d074f65e4d5c85ac42611a08fe94@o246548.ingest.sentry.io/6464187",
         traces_sample_rate=0.5
     )
-
-    logger = logging.getLogger("webvpn")
-    logger.setLevel(logging.DEBUG if verbose else logging.INFO)
-
-    ch = logging.StreamHandler()
-    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
-
-    config_dir = Path.home() / ".config" / "webvpn-py"
-    if not config_dir.exists():
-        config_dir.mkdir(parents=True)
-    ch = logging.FileHandler(config_dir / "log.txt")
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+    setup_logger(verbose)
 
 
 if __name__ == "__main__":

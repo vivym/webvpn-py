@@ -34,7 +34,7 @@ class Connection(metaclass=ABCMeta):
         self.updated_at = time.time()
 
     async def keep_alive(self) -> bool:
-        self.updated_at = time.time()
+        self.update()
         return not self.closed
 
     @abstractmethod
@@ -104,6 +104,7 @@ class Gateway(metaclass=ABCMeta):
             await asyncio.sleep(self.expire_time)
 
             now = time.time()
+            logger.info("Clean expired connections.")
             for token, conn in list(self.connections.items()):
                 if now - conn.updated_at > self.expire_time:
                     logger.info(f"Connection {token} expired")
