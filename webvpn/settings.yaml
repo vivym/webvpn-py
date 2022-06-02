@@ -1,0 +1,10 @@
+HOST: localhost
+PORT: 23388
+
+RHOST: 10.251.0.23
+RPORT: 22
+
+USERNAME: ""
+PASSWORD: ""
+
+VERBOSE: False
