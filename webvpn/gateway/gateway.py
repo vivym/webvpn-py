@@ -103,11 +103,14 @@ class Gateway(metaclass=ABCMeta):
         while True:
             await asyncio.sleep(self.expire_time)
 
-            now = time.time()
-            logger.info("Clean expired connections.")
-            for token, conn in list(self.connections.items()):
-                if now - conn.updated_at > self.expire_time:
-                    logger.info(f"Connection {token} expired")
+            try:
+                now = time.time()
+                logger.info("Clean expired connections.")
+                for token, conn in list(self.connections.items()):
+                    if now - conn.updated_at > self.expire_time:
+                        logger.info(f"Connection {token} expired")
 
-                    await conn.close()
-                    del self.connections[token]
+                        await conn.close()
+                        del self.connections[token]
+            except Exception as e:
+                print("Clean Error:", e)
