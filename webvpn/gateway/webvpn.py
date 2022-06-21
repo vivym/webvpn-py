@@ -205,7 +205,7 @@ class WebVPNGateway(Gateway):
 
         if not TEST_MODE:
             if not await conn.login():
-                await conn.close()
+                await self.close()
                 raise RuntimeError("Failed to login")
         await conn.get_token()
 
