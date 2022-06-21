@@ -62,7 +62,7 @@ class Gateway(metaclass=ABCMeta):
         try:
             await conn.push(data)
         except ConnectionClosedError:
-            await self.close()
+            await self.close(token)
             return False
 
         return True
@@ -75,7 +75,7 @@ class Gateway(metaclass=ABCMeta):
         try:
             return await conn.pull(n)
         except ConnectionClosedError:
-            await self.close()
+            await self.close(token)
             return None
 
     async def keep_alive(self, token: str):
@@ -84,7 +84,7 @@ class Gateway(metaclass=ABCMeta):
 
         conn = self.connections[token]
         if not await conn.keep_alive():
-            await self.close()
+            await self.close(token)
             return False
         else:
             return True
@@ -108,6 +108,6 @@ class Gateway(metaclass=ABCMeta):
                     if now - conn.updated_at > self.expire_time:
                         logger.info(f"Connection {token} expired")
 
-                        await self.close()
+                        await self.close(token)
             except Exception as e:
                 print("Clean Error:", e)
